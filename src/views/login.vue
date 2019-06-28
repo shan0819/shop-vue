@@ -1,6 +1,6 @@
 <template>
   <el-row type="flex" class="row-bg" justify="center" align="middle">
-    <el-col :xs="16" :sm="14" :md="12" :lg="10" :xl="8">
+    <el-col :xs="14" :sm="12" :md="10" :lg="8" :xl="8">
       <el-form
         :model="ruleForm"
         :rules="rules"
@@ -23,12 +23,13 @@
   </el-row>
 </template>
 <script>
+import axios from "axios";
 export default {
   data() {
     return {
       ruleForm: {
-        username: "",
-        password: ""
+        username: "admin",
+        password: "123456"
       },
       rules: {
         username: [
@@ -56,9 +57,17 @@ export default {
     submitForm(formName) {
       this.$refs[formName].validate(valid => {
         if (valid) {
-          alert("submit!");
+          axios({
+            url: "http://localhost:8888/api/private/v1/login",
+            method: "post",
+            data: this.ruleForm
+          }).then(({ data: { data, meta } }) => {
+            if (meta.status == 200) {
+              localStorage.setItem("token", data.token);
+              this.$router.push("/home");
+            }
+          });
         } else {
-          console.log("error submit!!");
           return false;
         }
       });
@@ -80,21 +89,4 @@ export default {
   border-radius: 10px;
   min-width: 320px;
 }
-/* demo-ruleForm el-form--label-top */
-/* .el-col {
-  border-radius: 4px;
-}
-.bg-purple-dark {
-  background: #99a9bf;
-}
-.bg-purple {
-  background: #d3dce6;
-}
-.bg-purple-light {
-  background: #e5e9f2;
-}
-.grid-content {
-  border-radius: 4px;
-  min-height: 36px;
-} */
 </style>

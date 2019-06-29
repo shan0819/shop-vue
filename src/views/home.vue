@@ -26,36 +26,33 @@
     </el-header>
     <el-container>
       <el-aside width="200px">
-        <el-row class="tac">
-          <el-col :span="24">
-            <el-menu
-              default-active="2"
-              @open="handleOpen"
-              @close="handleClose"
-              background-color="#545c64"
-              text-color="#fff"
-              active-text-color="#ffd04b"
-            >
-              <el-submenu index="1">
-                <template slot="title">
-                  <i class="el-icon-location"></i>
-                  <span>导航一</span>
-                </template>
-                <el-menu-item index="1-1">
-                  <i class="el-icon-menu"></i>
-                  选项1
-                </el-menu-item>
-              </el-submenu>
-            </el-menu>
-          </el-col>
-        </el-row>
+        <el-menu
+          :unique-opened="true"
+          :default-active="$route.path"
+          class="el-menu-vertical-demo"
+          background-color="#545c64"
+          text-color="#fff"
+          active-text-color="#ffd04b"
+          :router="true"
+        >
+          <el-submenu v-for="item in menus" :key="item.id" :index="item.path">
+            <template slot="title">
+              <i class="el-icon-location"></i>
+              <span>{{item.authName}}</span>
+            </template>
+            <el-menu-item :index="item.path" v-for="v in item.children" :key="v.id">
+              <i class="el-icon-menu"></i>
+              <span>{{v.authName}}</span>
+            </el-menu-item>
+          </el-submenu>
+        </el-menu>
       </el-aside>
       <el-main>Main</el-main>
     </el-container>
   </el-container>
 </template>
 <script>
-import Axios from "axios";
+import axios from "axios";
 export default {
   data() {
     return {
@@ -64,15 +61,18 @@ export default {
     };
   },
   created() {
-    this.getMenus();
+    axios({
+      url: "http://localhost:8888/api/private/v1/menus",
+      method: "get",
+      headers: { Authorization: localStorage.getItem("token") }
+    }).then(({ data: { data, meta } }) => {
+      console.log(data);
+      if (meta.status === 200) {
+        this.menus = data;
+      }
+    });
   },
   methods: {
-    handleOpen(key, keyPath) {
-      console.log(key, keyPath);
-    },
-    handleClose(key, keyPath) {
-      console.log(key, keyPath);
-    },
     logout() {
       this.$confirm("您是否确定要退出?", "提示", {
         confirmButtonText: "确定",
@@ -93,16 +93,6 @@ export default {
             message: "已取消退出"
           });
         });
-    },
-    getMenus() {
-      this.$http.get("http://localhost:8888/api/private/v1/menus").then(
-        res => {
-          console.log(res);
-        }
-        // response => {
-        //   // error callback
-        // }
-      );
     }
   }
 };
@@ -140,12 +130,8 @@ export default {
     }
   }
 }
-
-.el-col.el-col-24 {
+.el-menu {
   height: 100%;
-  .el-menu {
-    height: 100%;
-  }
 }
 </style>
 

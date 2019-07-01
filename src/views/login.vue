@@ -57,17 +57,27 @@ export default {
     submitForm(formName) {
       this.$refs[formName].validate(valid => {
         if (valid) {
-          axios({
+          this.$http({
             url: "http://localhost:8888/api/private/v1/login",
             method: "post",
             data: this.ruleForm
           }).then(({ data: { data, meta } }) => {
             if (meta.status == 200) {
+              this.$message({
+                message: meta.msg,
+                type: "success",
+                duration: 1000
+              });
               localStorage.setItem("token", data.token);
               this.$router.push("/home");
             }
           });
         } else {
+          this.$message({
+            message: meta.msg,
+            type: "error",
+            duration: 1000
+          });
           return false;
         }
       });

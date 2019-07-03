@@ -8,30 +8,70 @@
     </el-breadcrumb>
     <!-- 角色列表 -->
     <el-table :data="rolesList" style="width: 100%">
-      <!-- <template v-slot="{row}"> -->
       <el-table-column type="expand" prop="authName">
         <template v-slot="{row}">
-          <!-- <el-tag v-for="tag in row.children" :key="tag.authName" closable type>{{tag.authName}}</el-tag> -->
-          <el-table :data="row.children" style="width: 100%" :lazy="true" :show-header="false">
-            <!--
-            row-key="authName" :tree-props="{children: 'children', hasChildren: 'hasChildren'}"-->
-            <el-table-column prop="authName" label="123" width="180"></el-table-column>
-            <el-table-column prop="authName" label="345" width="180"></el-table-column>
-          </el-table>
+          <el-row v-for="level1 in row.children" :key="level1.id">
+            <el-col :span="4">
+              <el-tag closable>{{level1.authName}}</el-tag>
+            </el-col>
+            <el-col :span="20">
+              <el-row v-for="level2 in level1.children" :key="level2.id">
+                <el-col :span="4">
+                  <el-tag closable type="success">{{level2.authName}}</el-tag>
+                </el-col>
+                <el-col :span="20">
+                  <el-tag
+                    closable
+                    type="warning"
+                    v-for="level3 in level2.children"
+                    :key="level3.id"
+                  >{{level3.authName}}</el-tag>
+                </el-col>
+              </el-row>
+            </el-col>
+          </el-row>
         </template>
       </el-table-column>
-      <!-- </template> -->
       <el-table-column type="index"></el-table-column>
       <el-table-column label="角色名称" prop="roleName"></el-table-column>
       <el-table-column label="描述" prop="roleDesc"></el-table-column>
       <el-table-column label="操作">
         <template v-slot="{row}">
           <el-button type="primary" icon="el-icon-edit" size="mini" plain></el-button>
-          <el-button type="danger" icon="el-icon-delete" size="mini" plain></el-button>
-          <el-button type="success" icon="el-icon-check" size="mini" plain>分配角色</el-button>
+          <el-button
+            type="danger"
+            icon="el-icon-delete"
+            size="mini"
+            plain
+            @click="delRoles(row.id)"
+          ></el-button>
+          <el-button
+            type="success"
+            icon="el-icon-check"
+            size="mini"
+            plain
+            @click="getAssignRolesList(row,row.id)"
+          >分配角色</el-button>
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- 分配角色对话框 -->
+    <el-dialog title="分配角色" :visible.sync="isAssignRolesList">
+      <el-tree
+        :data="assignRolesList"
+        show-checkbox
+        node-key="id"
+        default-expand-all
+        :default-checked-keys="checkedRights"
+        :props="defaultProps"
+        ref="tree"
+      ></el-tree>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="isAssignRolesList = false">取 消</el-button>
+        <el-button type="primary" @click="assignRoles">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -39,53 +79,112 @@
 export default {
   data() {
     return {
-      rolesList: []
+      rolesList: [],
+      isAssignRolesList: false,
+      assignRolesList: [],
+      defaultProps: {
+        children: "children",
+        label: "authName"
+      },
+      checkedRights: [],
+      curRoleId: -1,
+      rids: []
     };
   },
   created() {
-    this.$http.get("roles").then(res => {
-      // console.log(res);
-      this.rolesList = res.data.data;
-      console.log(this.rolesList);
-    });
+    this.getRolesList();
   },
   methods: {
-    formatter({ row, column, cellValue, index }) {
-      console.log(row);
-    },
-    arraySpanMethod({ row, column, rowIndex, columnIndex }) {
-      console.log(row, column, rowIndex, columnIndex);
-
-      // if (rowIndex % 2 === 0) {
-      //   if (columnIndex === 0) {
-      //     return [1, 2];
-      //   } else if (columnIndex === 1) {
-      //     return [0, 0];
-      //   }
-      // }
+    getRolesList() {
+      this.$http.get("roles").then(res => {
+        this.rolesList = res.data.data;
+      });
     },
 
-    objectSpanMethod({ row, column, rowIndex, columnIndex }) {
-      // console.log(row);
-      // if (columnIndex === 0) {
-      //   if (rowIndex % 2 === 0) {
-      //     return {
-      //       rowspan: 2,
-      //       colspan: 1
-      //     };
-      //   } else {
-      //     return {
-      //       rowspan: 0,
-      //       colspan: 0
-      //     };
-      //   }
-      // }
+    async getAssignRolesList(row, id) {
+      this.isAssignRolesList = true;
+      let res = await this.$http({
+        url: "rights/tree"
+      });
+      this.assignRolesList = res.data.data;
+      this.curRoleId = id;
+      // let level1 = [];
+      // let level2 = [];
+      // let level3 = [];
+      row.children.forEach(item1 => {
+        // level1.push(item1.id);
+        item1.children.forEach(item2 => {
+          // level2.push(item2.id);
+          item2.children.forEach(item3 => {
+            this.checkedRights.push(item3.id);
+          });
+        });
+      });
+      // this.checkedRights = [...level1, ...level2, ...level3];
+    },
+    async assignRoles() {
+      // console.log(this.$refs.tree.getHalfCheckedKeys());
+      // console.log(this.$refs.tree.getCheckedKeys());
+      this.rids = [
+        ...this.$refs.tree.getCheckedKeys(),
+        ...this.$refs.tree.getHalfCheckedKeys()
+      ].join();
+      let res = await this.$http({
+        url: `roles/${this.curRoleId}/rights`,
+        method: "post",
+        data: {
+          rids: this.rids
+        }
+      });
+      this.isAssignRolesList = false;
+      this.getRolesList();
+
+      this.$message({
+        type: "success",
+        message: res.data.meta.msg,
+        duration: 1000
+      });
+    },
+    async delRoles(id) {
+      try {
+        await this.$confirm("此操作将永久删除该角色, 是否继续?", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning"
+        });
+
+        let res = await this.$http({
+          url: `roles/${id}`,
+          method: "delete"
+        });
+        if (res.data.meta !== 200) {
+          this.$message({
+            type: "error",
+            message: res.data.meta.msg,
+            duration: 1000
+          });
+        }
+        this.$message({
+          type: "success",
+          message: res.data.meta.msg,
+          duration: 1000
+        });
+        this.getRolesList();
+      } catch (error) {
+        this.$message({
+          type: "info",
+          message: "已取消删除"
+        });
+      }
     }
   }
 };
 </script>
 
 <style>
+.el-tag {
+  margin: 5px 15px;
+}
 .demo-table-expand {
   font-size: 0;
 }

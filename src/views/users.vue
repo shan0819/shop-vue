@@ -47,7 +47,13 @@
             plain
             @click="deleteUser(row.id)"
           ></el-button>
-          <el-button type="success" icon="el-icon-check" size="mini" plain>分配角色</el-button>
+          <el-button
+            type="success"
+            icon="el-icon-check"
+            size="mini"
+            plain
+            @click="assignRole(row)"
+          >分配角色</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -110,6 +116,26 @@
         <el-button type="primary" @click="updateUser">确 定</el-button>
       </div>
     </el-dialog>
+    <!-- 分配角色对话框 -->
+    <el-dialog title="分配角色" :visible.sync="assignRoledialog">
+      <el-form :model="assignRoleForm" label-width="80px">
+        <el-form-item label="用户名" prop="username">
+          <el-tag type="info" v-text="assignRoleForm.username"></el-tag>
+        </el-form-item>
+        <el-select v-model="assignRoleForm.rid" placeholder="请选择">
+          <el-option
+            v-for="item in roleList"
+            :key="item.id"
+            :value="item.id"
+            :label="item.roleName"
+          ></el-option>
+        </el-select>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="assignRoledialog = false">取 消</el-button>
+        <el-button type="primary" @click="updaterole">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 <script>
@@ -168,7 +194,14 @@ export default {
             trigger: "change"
           }
         ]
-      }
+      },
+      assignRoleForm: {
+        username: "",
+        rid: "",
+        id: ""
+      },
+      roleList: {},
+      assignRoledialog: false
     };
   },
   created() {
@@ -225,35 +258,6 @@ export default {
           });
         }
       });
-      // try {
-      //   let res = await this.$http({
-      //     url: "users",
-      //     method: "post",
-      //     data: {
-      //       username: this.addUserForm.username,
-      //       password: this.addUserForm,
-      //       email: this.addUserForm.email,
-      //       mobile: this.addUserForm.mobile
-      //     }
-      //   });
-      //   console.log(res);
-
-      //   if (res.data.meta.status === 200) {
-      //     this.addUserFormDialog = false;
-      //     this.$message({
-      //       type: "success",
-      //       message: res.data.meta.msg,
-      //       duration: 1000
-      //     });
-      //     this.getUserList();
-      //   }
-      // } catch (error) {
-      //   this.$message({
-      //     type: "error",
-      //     message: res.data.meta.msg,
-      //     duration: 1000
-      //   });
-      // }
     },
     // 关闭添加用户对话框
     close() {
@@ -364,6 +368,38 @@ export default {
           duration: 1000
         });
       }
+    },
+    // 分配角色
+    async assignRole(row) {
+      console.log(row);
+
+      this.assignRoledialog = true;
+
+      let res = await this.$http({
+        url: "roles"
+      });
+      this.roleList = res.data.data;
+      console.log(this.roleList);
+      const role = this.roleList.find(item => item.roleName === row.role_name);
+      const rid = role ? role.id : "";
+      this.assignRoleForm.username = row.username;
+      this.assignRoleForm.id = row.id;
+      this.assignRoleForm.rid = rid;
+    },
+    // async changerid(value) {
+    //   this.assignRoleForm.rid = value;
+
+    // },
+    async updaterole() {
+      this.assignRoledialog = false;
+      let userRole = await this.$http({
+        url: `users/${this.assignRoleForm.id}/role`,
+        method: "put",
+        data: {
+          rid: this.assignRoleForm.rid
+        }
+      });
+      this.getUserList();
     }
   }
 };

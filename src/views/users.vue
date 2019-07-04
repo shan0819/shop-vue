@@ -93,8 +93,8 @@
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="addUserFormDialog = false">取 消</el-button>
-        <el-button type="primary" @click="addUser('addUserForm')">确 定</el-button>
+        <el-button @click="addUserFormDialog = false">取消</el-button>
+        <el-button type="primary" @click="addUser(addUserForm)">确定</el-button>
       </div>
     </el-dialog>
 
@@ -238,14 +238,14 @@ export default {
         url: "users",
         method: "post",
         data: this.addUserForm
-      }).then(({ data: { data, meta } }) => {
-        if (meta.status === 201) {
+      }).then(res => {
+        if (res.data.meta.status === 201) {
           // 关闭对话框
           this.addUserFormDialog = false;
           // 提示
           this.$message({
             type: "success",
-            message: meta.msg,
+            message: res.data.meta.msg,
             duration: 1000
           });
           // 重新渲染
@@ -253,7 +253,7 @@ export default {
         } else {
           this.$message({
             type: "error",
-            message: meta.msg,
+            message: res.data.meta.msg,
             duration: 1000
           });
         }
@@ -266,15 +266,13 @@ export default {
     // 设置用户状态
     async changstate(state, id) {
       try {
-        let {
-          data: { data, meta }
-        } = await this.$http({
+        let res = await this.$http({
           url: `users/${id}/state/${state}`,
           method: "put"
         });
-        if (meta.status === 200) {
+        if (res.data.meta.status === 200) {
           this.$message({
-            message: meta.msg,
+            message: res.data.meta.msg,
             type: "success",
             duration: 1000
           });
@@ -296,16 +294,14 @@ export default {
           cancelButtonText: "取消",
           type: "warning"
         });
-        let {
-          data: { meta }
-        } = await this.$http({
+        let res = await this.$http({
           url: `users/${id}`,
           method: "delete"
         });
-        if (meta.status === 200) {
+        if (res.data.meta.status === 200) {
           this.$message({
             type: "success",
-            message: meta.msg,
+            message: res.data.meta.msg,
             duration: 1000
           });
           this.currentpage = 1;
@@ -314,7 +310,7 @@ export default {
       } catch (e) {
         this.$message({
           type: "error",
-          message: meta.msg,
+          message: "失败",
           duration: 1000
         });
       }
@@ -328,8 +324,6 @@ export default {
         url: `users/${id}`,
         method: "get"
       });
-      console.log(data, meta);
-
       if (meta.status === 200) {
         this.editform.id = data.id;
         this.editform.username = data.username;
@@ -341,9 +335,7 @@ export default {
     async updateUser() {
       this.editformdialog = false;
       try {
-        let {
-          data: { data, meta }
-        } = await this.$http({
+        let res = await this.$http({
           url: `users/${this.editform.id}`,
           method: "put",
           data: {
@@ -351,11 +343,9 @@ export default {
             mobile: this.editform.mobile
           }
         });
-        console.log(data);
-
-        if (meta.status === 200) {
+        if (res.data.meta.status === 200) {
           this.$message({
-            message: meta.msg,
+            message: res.data.meta.msg,
             type: "success",
             duration: 1000
           });
@@ -363,7 +353,7 @@ export default {
         }
       } catch (error) {
         this.$message({
-          message: meta.msg,
+          message: "操作失败",
           type: "error",
           duration: 1000
         });
@@ -371,15 +361,12 @@ export default {
     },
     // 分配角色
     async assignRole(row) {
-      console.log(row);
-
       this.assignRoledialog = true;
 
       let res = await this.$http({
         url: "roles"
       });
       this.roleList = res.data.data;
-      console.log(this.roleList);
       const role = this.roleList.find(item => item.roleName === row.role_name);
       const rid = role ? role.id : "";
       this.assignRoleForm.username = row.username;
@@ -392,7 +379,7 @@ export default {
     // },
     async updaterole() {
       this.assignRoledialog = false;
-      let userRole = await this.$http({
+      await this.$http({
         url: `users/${this.assignRoleForm.id}/role`,
         method: "put",
         data: {
@@ -417,4 +404,3 @@ export default {
   background-color: transparent;
 }
 </style>
-

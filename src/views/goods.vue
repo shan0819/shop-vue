@@ -1,5 +1,11 @@
 <template>
   <div>
+    <!-- 面包屑导航 -->
+    <el-breadcrumb separator-class="el-icon-arrow-right">
+      <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+      <el-breadcrumb-item>商品管理</el-breadcrumb-item>
+      <el-breadcrumb-item>商品列表</el-breadcrumb-item>
+    </el-breadcrumb>
     <el-button type="success" plain>添加商品</el-button>
     <!-- 商品列表 -->
     <el-table :data="productList" stripe style="width: 100%">
@@ -15,6 +21,7 @@
         </template>
       </el-table-column>
     </el-table>
+    <!-- 分页 -->
     <el-pagination
       background
       layout="prev, pager, next"
@@ -48,8 +55,6 @@ export default {
           pagesize: this.pagesize
         }
       });
-      // console.log(res);
-
       this.total = res.data.data.total;
       this.productList = res.data.data.goods;
     },
@@ -60,4 +65,8 @@ export default {
   }
 };
 </script>
-
+<style scoped>
+.el-breadcrumb {
+  margin-bottom: 15px;
+}
+</style>

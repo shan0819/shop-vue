@@ -7,6 +7,7 @@ import Roles from "./views/roles.vue";
 import Rights from "./views/rights.vue";
 import Goods from "./views/goods.vue";
 import Categories from "./views/categories.vue";
+import Goodsadd from "./views/goods-add.vue";
 Vue.use(Router);
 
 export default new Router({
@@ -38,6 +39,10 @@ export default new Router({
         {
           path: "/categories",
           component: Categories
+        },
+        {
+          path: "/goods-add",
+          component: Goodsadd
         }
       ]
     },

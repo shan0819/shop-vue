@@ -39,7 +39,7 @@
 
     <!-- 添加分类对话框 -->
     <el-dialog title="收货地址" :visible.sync="showAddCategoryDialog">
-      <el-form :model="addCategoryForm" label-width="100px">
+      <el-form :model="addCategoryForm" res="addCategoryForm" label-width="100px">
         <el-form-item label="分类名称">
           <el-input v-model="addCategoryForm.cat_name" autocomplete="off"></el-input>
         </el-form-item>
@@ -140,6 +140,7 @@ export default {
         message: res.data.meta.msg,
         duration: 1000
       });
+      this.$refs.addCategoryForm.resetFields();
       this.getCategoryList();
     }
   }
